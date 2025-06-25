@@ -19,13 +19,3 @@ bsub -J "get_module_scores-${level}-${hm}" -M"$MEM" -R"select[mem>$MEM] rusage[m
     "Rscript scripts/estimate_ModuleScores.r 'input/' 'sanger_sample_id' 'Genotyping_ID' 'predicted_labels' 'input/ISG_fixed_all.txt' 'ISG' 'results/'    > \
     logs/get_module_scores-${level}-${hm}.Rout"
 ```
-
-if(testing){
-    seurf = "input/"
-    sampcol = "sanger_sample_id"
-    indcol = "Genotyping_ID"
-    ctcol = "predicted_labels"
-    gene_listf = "input/ISG_fixed_all.txt"
-    gene_list_name = "ISG"
-    outname = "results/"
-}
