@@ -80,8 +80,8 @@ def main():
     input_file = inherited_options.input_file # input_file="/lustre/scratch127/humgen/projects_v2/sc-eqtl-ibd/analysis/bradley_analysis/IBDverse/atlassing/results/objects/from_irods/celltypist_0.5_ngene_ncount_mt_filt_nomiss.h5ad"
     metadata_cols = inherited_options.metadata_cols # metadata_cols = "sanger_sample_id,Genotyping_ID,disease_status,predicted_category,tissue,predicted_labels"
     metadata_cols = metadata_cols.split(",")
-    gene_listf = inherited_options.gene_listf # gene_listf = "input/ISG_fixed_all.txt"
-    gene_list_name = inherited_options.gene_list_name # gene_list_name = "ISG"
+    gene_listf = inherited_options.gene_listf # gene_listf = "input/schoggins_379ISGs.txt"
+    gene_list_name = inherited_options.gene_list_name # gene_list_name = "379ISGs"
     outname = inherited_options.outname # outname = "results/"
     
     # 1. Load
@@ -99,6 +99,9 @@ def main():
         adata.var_names = list(adata.var['gene_symbols'])
         adata.var_names_make_unique()
         adata.var['gene_symbols_unique'] = adata.var_names.copy()
+        
+    # make sure .X is normalised data
+    adata.X = adata.layers['log1p_cp10k']
     
     print("..Computing module scores")
     sc.tl.score_genes(adata, gene_list, score_name=gene_list_name)
