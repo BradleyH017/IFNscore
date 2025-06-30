@@ -109,7 +109,7 @@ def main():
     # 4. Extract and save
     print("..Saving")
     metadata_cols.append(gene_list_name)
-    to_save = adata.obs[metadata_cols]   
+    to_save = adata.obs[metadata_cols] 
     os.makedirs(outname, exist_ok=True)
     fullout = f"{outname}{gene_list_name}-module_scores.txt.gz"
     to_save.to_csv(fullout, sep="\t", index=True, compression='gzip')

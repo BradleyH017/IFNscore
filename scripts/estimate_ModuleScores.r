@@ -15,7 +15,7 @@ metadata_cols = unlist(strsplit(metadata_cols, ","))
 
 # 1. Load object
 print("..Loading in object")
-seurat_obj <- LoadH5Seurat(seurf)
+seurat_obj <- readRDS(seurf)
 
 # 2. Load gene set
 gene_vector <- read.delim(gene_listf, sep = "\t", header = F)[,1]

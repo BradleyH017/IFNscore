@@ -1,0 +1,2 @@
+outdir: "input/expr_per_sample"
+sample_list: "input/expr_per_sample/samples.txt"

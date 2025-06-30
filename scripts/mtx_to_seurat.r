@@ -5,18 +5,32 @@
 library(Seurat)
 
 args = commandArgs(trailingOnly=TRUE)
-data_dir <- args[1] # data_dir="input/mtx"
-out_dir <- args[2] # input/
+sample_list <- args[1] # sample_list="input/expr_per_sample/samples.txt"
+input_dir <- args[2] # input_dir="input/expr_per_sample/"
+out_dir <- args[3] # out_dir="input/"
 
-# Load expression
-print("..Reading 10X")
-expression_data <- Read10X(data.dir = data_dir)
+# Load sample_list
+print("..Loading in per sample matrices")
+samples = readLines(sample_list)
+samp_list = vector("list", length = length(samples))
+for(s in samples){
+    print(s)
+    expression_data <- Read10X(data.dir = paste0(input_dir, s))
+    seurat_obj <- CreateSeuratObject(counts = expression_data, project = s)
+    seurat_obj@assays$RNA$data <- expression_data
+    samp_list[[which(samples == s)]] <- seurat_obj
+}
 
-# Create Seurat object
-print("Creating seurat object")
-seurat_obj <- CreateSeuratObject(counts = expression_data, project = "MyProject")
-seurat_obj@assays$RNA$data <- expression_data
+# Combine
+print("Combining")
+merged_seurat <- merge(
+  x = samp_list[[1]], 
+  y = samp_list[2:length(samp_list)]
+)
 
+# Joing layers
+print("Merging layers")
+merged_seurat <- JoinLayers(merged_seurat)
 
 # Save
 print("..Saving")

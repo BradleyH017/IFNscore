@@ -1,42 +1,21 @@
 # Code used to estimate IFN module scores in IBDverse (and subsequent analysis)
 
-#### 1. Convert the h5ad object to seurat
-```
-mkdir -p logs
-input_f="/lustre/scratch127/humgen/projects_v2/sc-eqtl-ibd/analysis/bradley_analysis/IBDverse/atlassing/results/objects/from_irods/celltypist_0.5_ngene_ncount_mt_filt_nomiss.h5ad"
-output_f="input/celltypist_0.5_ngene_ncount_mt_filt_nomiss."
-module load HGI/common/h5ad_to_seurat/0.1
-MEM=50000
-bsub -J "conv_seurat" -M"$MEM" -R"select[mem>$MEM] rusage[mem=$MEM] span[hosts=1]" -G team152 \
-    -e logs/conv_seurat-%J-stderr \
-    -o logs/conv_seurat-%J-stdout \
-    "h5ad_to_seurat ${input_f} ${output_f}"
-```
-
-#### 1-Alternative: Make seurat from expression and metadata manually
-Extract this from the h5ad and save as mtx
+#### 1: Make seurat from expression and metadata manually
+Save a list of samples from the anndata object. The -l option means the matrix being saved in the log1p_cp10k matrix
 ```
 module load HGI/softpack/users/eh19/test-scvi-reserve/33
-mkdir -p logs
-mkdir -p input/mtx
+MEM=50000
 input_f="/lustre/scratch127/humgen/projects_v2/sc-eqtl-ibd/analysis/bradley_analysis/IBDverse/atlassing/results/objects/from_irods/celltypist_0.5_ngene_ncount_mt_filt_nomiss.h5ad"
-MEM=500000
-bsub -J "h5_to_mtx" -M"$MEM" -R"select[mem>$MEM] rusage[mem=$MEM] span[hosts=1]" -G team152 \
-    -e logs/h5_to_mtx-%J-stderr \
-    -o logs/h5_to_mtx-%J-stdout \
-    "python scripts/h5_to_mtx.py ${input_f} 'input/mtx' --out_file '' --verbose"
+bsub -J "get_samp_list_chunk" -M"$MEM" -R"select[mem>$MEM] rusage[mem=$MEM] span[hosts=1]" -G team152 \
+    -e logs/get_samp_list_chunk-%J-stderr \
+    -o logs/get_samp_list_chunk-%J-stdout \
+    "python scripts/get_samp_list_chunk.py -i ${input_f} -l 'log1p_cp10k' -s 'sanger_sample_id' -m 'sanger_sample_id,Genotyping_ID,predicted_labels,predicted_category,disease_status' -o 'input/expr_per_sample'"
 ```
 
-Now make a seurat object from this
+Then run a snakemake pipeline to: 1) Extract mtx for each, and 2) Collate the mtx into a single seurat object
 ```
-module load HGI/softpack/users/tr12/JAGUAR_CytoOmic/2
-MEM=500000
-bsub -J "mtx_to_seurat" -M"$MEM" -R"select[mem>$MEM] rusage[mem=$MEM] span[hosts=1]" -G team152 \
-    -e logs/mtx_to_seurat-%J-stderr \
-    -o logs/mtx_to_seurat-%J-stdout \
-    "Rscript scripts/mtx_to_seurat.py 'input/mtx' 'input/'"
+bsub -M 10000 -a "memlimit=True" -R "select[mem>10000] rusage[mem=10000] span[hosts=1]" -o sm_logs/snakemake_master-%J-output.log -e sm_logs/snakemake_master-%J-error.log -q oversubscribed -J "snakemake_master_CONV" < submit_snakemake_BH.sh 
 ```
-
 
 #### 2. Calculate the module scores for each cell-type, within each sample
 ```

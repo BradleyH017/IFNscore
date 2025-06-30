@@ -123,6 +123,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    print("..Loading anndata")
     adata = anndata.read_h5ad(args.h5ad_path) 
     
     # from types import SimpleNamespace
@@ -131,19 +132,8 @@ if __name__ == "__main__":
     # args.out_file = "eqtl_set_input"
     # args.output_dir = "input"
     # args.verbose = True
-        
-    # Some BH edits compared with yascp
-    # Filter for the obs we are interested in
-    print("..Loading anndata")
-    adata.obs = adata.obs[['sanger_sample_id', 'Genotyping_ID', 'disease_status', 'predicted_category', 'tissue', 'predicted_labels']]
-    # Make sure .X is logcp10k
-    adata.X = adata.layers['log1p_cp10k']
     
     print("..Saving as MTX")
     h5ad_to_tenxmatrix(adata, args.out_file, args.output_dir, args.verbose)
-    
-    # Save metadata
-    print("..Saving metadata")
-    adata.obs.to_csv("input/want_metadata.txt.gz", sep="\t", index=True, compression='gzip')
     
     print("..DONE!")
