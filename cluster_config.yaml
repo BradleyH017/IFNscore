@@ -1,8 +1,0 @@
-__default__:
-    queue: "normal"
-    memory: "6000" 
-
-rule aggregate:
-    queue: "teramem"
-    memory: "750000" 
-

@@ -1,6 +1,3 @@
-# load config
-configfile: "scripts/config.yaml"
-
 # Get the gene list
 with open(config["sample_list"], "r") as f:
     samples = [line.strip() for line in f if line.strip()]
@@ -43,10 +40,11 @@ rule aggregate:
     resources:
         mem_mb=750000,
         disk_mb=750000,
-        queue="teramem"
+        queue='teramem',
+        threads=1
     singularity:
         "/software/hgi/softpack/installs/users/tr12//JAGUAR_CytoOmic/2-scripts/singularity.sif"
     shell:
         r"""
-        Rscript scripts/h5_to_mtx.py {params.sample_list} '{params.outdir}/' '{params.outdir}/../'
+        Rscript scripts/mtx_to_seurat.r {params.sample_list} '{params.outdir}/' '{params.outdir}/../'
         """

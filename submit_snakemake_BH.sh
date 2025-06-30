@@ -11,7 +11,7 @@
 
 # Define some params
 config_var=scripts/config.yaml
-worfklow_prefix="clump_"
+worfklow_prefix="CONV_"
 group="team152"
 workdir=${PWD}
 
@@ -35,8 +35,7 @@ snakemake -j 20000 \
     --rerun-incomplete \
     --keep-going \
     --directory ${workdir} \
-    --cluster-config ${config_var} \
-    --cluster-config cluster_config.yaml \
+    --configfile ${config_var} \
     --use-singularity \
     --singularity-args "-B /lustre,/software,/nfs/users/nfs_b/bh18/.local/lib/python3.7/site-packages" \
     --keep-going \
