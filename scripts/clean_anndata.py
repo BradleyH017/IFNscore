@@ -34,14 +34,6 @@ def parse_options():
             required=True,
             help=''
         )
-    
-    parser.add_argument(
-            '-s', '--sample_col',
-            action='store',
-            dest='metadata_cols',
-            required=True,
-            help=''
-        )
 
     parser.add_argument(
             '-l', '--layer',
@@ -69,7 +61,6 @@ def parse_options():
     
     return parser.parse_args()
 
-
 def main():
     # Parse options
     inherited_options = parse_options()
@@ -84,25 +75,27 @@ def main():
     # Make sure outdir exists
     os.makedirs(inherited_options.outdir, exist_ok=True)
     
-    # Save a list of unique values for chunks
-    chunks = adata.obs[inherited_options.sample_col].reset_index(drop=True).drop_duplicates().tolist()
-    with open(f"{inherited_options.outdir}/samples.txt", "w") as f:
-        for item in chunks:
-            f.write(f"{item}\n")
-            
-    # Save a .h5ad per sample (in new dir)
-    for item in chunks:
-        print(item)
-        outdir=f"{inherited_options.outdir}/{item}"    
-        os.makedirs(outdir, exist_ok=True)
-        adata[adata.obs[inherited_options.sample_col] == item].write_h5ad(f"{outdir}/{item}.h5ad")
-        
-    # Save the metadata
+    # Save metadata
     to_save = adata.obs[inherited_options.metadata_cols.split(",")]   
     to_save.to_csv(f"{inherited_options.outdir}/metadata.txt.gz", sep="\t", index=True, compression='gzip')
-        
     
+    # Make gene symbols the rownames
+    adata.var['ENS'] = adata.var_names.copy()
+    adata.var_names = list(adata.var['gene_symbols'])
+    adata.var_names_make_unique()
+    adata.var['gene_symbols_unique'] = adata.var_names.copy()
+    
+    # Save var
+    var = adata.var
+    var.to_csv(f"{inherited_options.outdir}/var.txt.gz", sep="\t", index=True, compression='gzip')
+
+    # Clean var and metadata
+    adata.var = pd.DataFrame(index=adata.var['gene_symbols_unique'])
+    adata.obs = pd.DataFrame(index=adata.obs.index)
+    
+    # Save
+    adata.write_h5ad(f"{inherited_options.outdir}/clean.h5ad")
+        
 # Execute
 if __name__ == '__main__':
     main()
-    
