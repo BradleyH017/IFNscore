@@ -22,6 +22,7 @@ import anndata as ad
 import matplotlib as mp
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import rc_context
+import argparse
 
 def parse_options():    
     # Inherit options
@@ -80,8 +81,8 @@ def main():
     input_file = inherited_options.input_file # input_file="/lustre/scratch127/humgen/projects_v2/sc-eqtl-ibd/analysis/bradley_analysis/IBDverse/atlassing/results/objects/from_irods/celltypist_0.5_ngene_ncount_mt_filt_nomiss.h5ad"
     metadata_cols = inherited_options.metadata_cols # metadata_cols = "sanger_sample_id,Genotyping_ID,disease_status,predicted_category,tissue,predicted_labels"
     metadata_cols = metadata_cols.split(",")
-    gene_listf = inherited_options.gene_listf # gene_listf = "input/schoggins_379ISGs.txt"
-    gene_list_name = inherited_options.gene_list_name # gene_list_name = "379ISGs"
+    gene_listf = inherited_options.gene_listf # gene_listf = "input/gene_list/schoggins_379ISGs.txt"
+    gene_list_name = inherited_options.gene_list_name # gene_list_name = "schoggins_ISGs"
     outname = inherited_options.outname # outname = "results/"
     
     # 1. Load
@@ -100,11 +101,18 @@ def main():
         adata.var_names_make_unique()
         adata.var['gene_symbols_unique'] = adata.var_names.copy()
         
+        
     # make sure .X is normalised data
     adata.X = adata.layers['log1p_cp10k']
     
+    # Across all data
     print("..Computing module scores")
-    sc.tl.score_genes(adata, gene_list, score_name=gene_list_name)
+    sc.tl.score_genes(adata, gene_list, score_name=gene_list_name, n_bins=24, ctrl_size=100, use_raw=False) # Believe these params best match Seurat::AddModuleScores
+    
+    # For TI only
+    print("..Computing module scores - TI only")
+    ti = adata[adata.obs['tissue'] == "ti"]
+    sc.tl.score_genes(ti, gene_list, score_name=gene_list_name, n_bins=24, ctrl_size=100, use_raw=False) 
     
     # 4. Extract and save
     print("..Saving")
@@ -114,6 +122,10 @@ def main():
     fullout = f"{outname}{gene_list_name}-module_scores.txt.gz"
     to_save.to_csv(fullout, sep="\t", index=True, compression='gzip')
     
+    # Also for TI only
+    to_save = ti.obs[metadata_cols] 
+    fullout = f"{outname}{gene_list_name}-TI-module_scores.txt.gz"
+    to_save.to_csv(fullout, sep="\t", index=True, compression='gzip')
     
 # Execute
 if __name__ == '__main__':
