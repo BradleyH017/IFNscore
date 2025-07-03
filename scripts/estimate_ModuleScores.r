@@ -7,15 +7,14 @@ library(tidyverse)
 
 # Load in Seurat object and calculate IFN burden score
 args = commandArgs(trailingOnly=TRUE)
-seurf=args[1] # seurf = "/lustre/scratch127/humgen/projects_v2/sc-eqtl-ibd/analysis/bradley_analysis/edQTLs/IFNscore/input/subsampled.h5seurat"
-gene_listf=args[3] # "input/schoggins_379ISGs.txt"
-gene_list_name = args[4] # gene_list_name="ISG"
+seurf=args[1] # seurf = "input/clean.h5seurat"
+gene_listf=args[3] # gene_listf="input/gene_list/schoggins_379ISGs.txt"
+gene_list_name = args[4] # gene_list_name="schogginsISG"
 outname=args[5] # outname="results/"
-metadata_cols = unlist(strsplit(metadata_cols, ","))
 
 # 1. Load object
 print("..Loading in object")
-seurat_obj <- readRDS(seurf)
+seurat_obj <- LoadH5Seurat(seurf)
 
 # 2. Load gene set
 gene_vector <- read.delim(gene_listf, sep = "\t", header = F)[,1]
