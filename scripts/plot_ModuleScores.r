@@ -5,13 +5,14 @@ library(dplyr)
 library(ggpubr)
 library(tidyverse)
 indir="results/"
-scale=T
+out="plotout/"
+scale=F
 if(scale){
     indir = paste0(indir, "scaled-")
+    out = paste0(out, "scaled-")
 }
 allres=paste0(indir, "schogginsISG-module_scores.txt.gz")
 tires=paste0(indir, "schogginsISG-TI-module_scores.txt.gz")
-out="plotout/"
 modulename="schogginsISG"
 umap.palette.df = read.csv("/lustre/scratch127/humgen/projects_v2/sc-eqtl-ibd/analysis/bradley_analysis/IBDverse/IBDVerse-sc-eQTL-code/data/palette.csv")
 umap.category.palette = deframe(dplyr::select(umap.palette.df, category, category_color))
@@ -110,7 +111,7 @@ ggsave(paste0(out, "ISG_per_per_category_healthy_only.pdf"),
 # How does this vary by disease status?
 #######################
 # Use data just from the TI - so a seperate analysis
-mstisamp = fread(allres) %>% 
+mstisamp = fread(tires) %>% 
     mutate(
         category = gsub("_ct", "", predicted_category),
         disease_status = factor(disease_status, levels = c("Healthy", "CD"))
