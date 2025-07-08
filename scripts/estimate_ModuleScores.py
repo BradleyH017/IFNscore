@@ -72,6 +72,14 @@ def parse_options():
             help=''
         )
 
+    parser.add_argument(
+            '-s', '--scale',
+            action='store_true',
+            dest='scale',
+            required=True,
+            help=''
+        )
+
     return parser.parse_args()
 
 
@@ -84,6 +92,7 @@ def main():
     gene_listf = inherited_options.gene_listf # gene_listf = "input/gene_list/schoggins_379ISGs.txt"
     gene_list_name = inherited_options.gene_list_name # gene_list_name = "schoggins_ISGs"
     outname = inherited_options.outname # outname = "results/"
+    scale = inherited_options.scale # scale = True
     
     # 1. Load
     print("..Loading object")
@@ -104,6 +113,12 @@ def main():
         
     # make sure .X is normalised data
     adata.X = adata.layers['log1p_cp10k']
+    
+    # Scale the data?
+    if scale:
+        print("..Scaling the data")
+        sc.pp.scale(adata, max_value=10)
+        outname = f"{outname}scaled-"
     
     # Across all data
     print("..Computing module scores")
