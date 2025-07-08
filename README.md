@@ -9,8 +9,6 @@ export SINGULARITY_CACHEDIR=$PWD/.singularity_cache
 mkdir -p "$SINGULARITY_CACHEDIR"
 singularity pull docker://bh18/atlassing:33
 ```
-- Then adjust the singularity paths in `workflows
-/*.smk` to the location of the downloaded image.
 
 #### 1. Clean anndata, convert to seurat
 - Remove the .var info (make sure gene names are in index and are unique)
