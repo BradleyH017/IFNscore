@@ -32,13 +32,13 @@ bsub -J "get_module_scores" -M"$MEM" -R"select[mem>$MEM] rusage[mem=$MEM] span[h
     "Rscript scripts/estimate_ModuleScores.r 'input/seurat_obj.rds' 'input/gene_list/schoggins_379ISGs.txt' 'schogginsISG' 'results/'"
 ```
 
-- Or using the scanpy object in python
+- Or using the scanpy object in python (if scaling '-s' - requires lots of memory. Otherwise ~350GB will do it)
 ```
 input_f="/lustre/scratch127/humgen/projects_v2/sc-eqtl-ibd/analysis/bradley_analysis/IBDverse/atlassing/results/objects/from_irods/celltypist_0.5_ngene_ncount_mt_filt_nomiss.h5ad"
-MEM=500000
+MEM=1000000
 module load HGI/softpack/users/eh19/test-scvi-reserve/33
-bsub -J "get_module_scores_py" -M"$MEM" -R"select[mem>$MEM] rusage[mem=$MEM] span[hosts=1]" -G team152 \
-    -e logs/get_module_scores-J%-stderr \
-    -o logs/get_module_scores-J%-stdout \
-    "python scripts/estimate_ModuleScores.py ${input_f} 'input/gene_list/schoggins_379ISGs.txt' 'schogginsISG' 'results/'"
+bsub -J "get_module_scores_py" -M"$MEM" -R"select[mem>$MEM] rusage[mem=$MEM] span[hosts=1]" -G team152 -q teramem \
+    -e logs/get_module_scores-%J-stderr \
+    -o logs/get_module_scores-%J-stdout \
+    "python scripts/estimate_ModuleScores.py -i ${input_f} -m "sanger_sample_id,Genotyping_ID,disease_status,predicted_category,tissue,predicted_labels" -gl 'input/gene_list/schoggins_379ISGs.txt' -gn 'schogginsISG' -o 'results/' -s"
 ```
