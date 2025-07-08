@@ -1,10 +1,22 @@
 # Code used to estimate IFN module scores in IBDverse (and subsequent analysis)
 
+### Installation
+
+If using Sanger farm. No downloads or installs are required. 
+Otherwise, singularity image (HGI/softpack/users/eh19/test-scvi-reserve/33) can be downloaded from dockerhub:
+```
+export SINGULARITY_CACHEDIR=$PWD/.singularity_cache
+mkdir -p "$SINGULARITY_CACHEDIR"
+singularity pull docker://bh18/atlassing:33
+```
+- Then adjust the singularity paths in `workflows
+/*.smk` to the location of the downloaded image.
+
 #### 1. Clean anndata, convert to seurat
 - Remove the .var info (make sure gene names are in index and are unique)
 ```
 input_f="/lustre/scratch127/humgen/projects_v2/sc-eqtl-ibd/analysis/bradley_analysis/IBDverse/atlassing/results/objects/from_irods/celltypist_0.5_ngene_ncount_mt_filt_nomiss.h5ad"
-module load HGI/softpack/users/eh19/test-scvi-reserve/33
+module load HGI/softpack/users/eh19/test-scvi-reserve/33 # Or run in singalarity container installed above
 python scripts/clean_anndata.py -i ${input_f} -l 'log1p_cp10k' -m "sanger_sample_id,Genotyping_ID,predicted_labels,predicted_category,disease_status" -o "input/"
 ```
 
