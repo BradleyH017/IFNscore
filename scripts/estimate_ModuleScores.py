@@ -89,10 +89,10 @@ def main():
     input_file = inherited_options.input_file # input_file="/lustre/scratch127/humgen/projects_v2/sc-eqtl-ibd/analysis/bradley_analysis/IBDverse/atlassing/results/objects/from_irods/celltypist_0.5_ngene_ncount_mt_filt_nomiss.h5ad"
     metadata_cols = inherited_options.metadata_cols # metadata_cols = "sanger_sample_id,Genotyping_ID,disease_status,predicted_category,tissue,predicted_labels"
     metadata_cols = metadata_cols.split(",")
-    gene_listf = inherited_options.gene_listf # gene_listf = "input/gene_list/schoggins_379ISGs.txt"
+    gene_listf = inherited_options.gene_listf # gene_listf = "input/gene_list/schoggins_379ISGs_fixed.txt"
     gene_list_name = inherited_options.gene_list_name # gene_list_name = "schoggins_ISGs"
     outname = inherited_options.outname # outname = "results/"
-    scale = inherited_options.scale # scale = True
+    scale = inherited_options.scale # scale = False
     
     # 1. Load
     print("..Loading object")
@@ -119,7 +119,13 @@ def main():
         print("..Scaling the data")
         sc.pp.scale(adata, max_value=10)
         outname = f"{outname}scaled-"
+    else:
+        print("..NOT scaling the data")
     
+    # Check for missing genes and print these ahead of computation
+    missing = np.setdiff1d(gene_list, adata.var.index)
+    print(f"Genes in the test list but not in the anndata file: {', '.join(missing)}")
+
     # Across all data
     print("..Computing module scores")
     sc.tl.score_genes(adata, gene_list, score_name=gene_list_name, n_bins=24, ctrl_size=100, use_raw=False) # Believe these params best match Seurat::AddModuleScores

@@ -50,5 +50,5 @@ module load HGI/softpack/users/eh19/test-scvi-reserve/33
 bsub -J "get_module_scores_py" -M"$MEM" -R"select[mem>$MEM] rusage[mem=$MEM] span[hosts=1]" -G team152 -q teramem \
     -e logs/get_module_scores-%J-stderr \
     -o logs/get_module_scores-%J-stdout \
-    "python scripts/estimate_ModuleScores.py -i ${input_f} -m "sanger_sample_id,Genotyping_ID,disease_status,predicted_category,tissue,predicted_labels" -gl 'input/gene_list/schoggins_379ISGs.txt' -gn 'schogginsISG' -o 'results/' -s"
+    "python scripts/estimate_ModuleScores.py -i ${input_f} -m "sanger_sample_id,Genotyping_ID,disease_status,predicted_category,tissue,predicted_labels" -gl 'input/gene_list/schoggins_379ISGs_fixed.txt' -gn 'schogginsISG_fixed' -o 'results/'"
 ```
