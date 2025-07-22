@@ -245,7 +245,7 @@ ggsave(paste0(out, "ISG_per_per_celltype.pdf"),
 # How does this vary by disease status?
 #######################
 # Use data just from the TI - so a seperate analysis
-mstisamp = fread(tires) %>% 
+msti = fread(tires) %>% 
     mutate(
         category = gsub("_ct", "", predicted_category),
         disease_status = factor(disease_status, levels = c("Healthy", "CD"))
@@ -254,7 +254,9 @@ mstisamp = fread(tires) %>%
     mutate(
         disease_inflam = paste0(disease_status, "-", ses_inflamed),
         disease_inflam = factor(disease_inflam, levels=c("Healthy-uninflamed", "CD-uninflamed", "CD-inflamed"))
-    ) %>% 
+    )
+
+mstisamp = mti %>%
     select(-predicted_labels) %>% 
     group_by(category, sanger_sample_id) %>% 
     mutate(
@@ -272,7 +274,7 @@ for(g in groups) {
 
     p = ggplot(mstisamp, aes(x = .data[[g]], y = median_ISG, fill=.data[[g]])) +
         geom_violin(trim = FALSE, color = "black") +
-        stat_summary(fun = median, geom = "crossbar", width = 0.3, color = "black", fatten = 0) +
+        stat_summary(fun = median, geom = "crossbar", width = 0.3, color = "black", fatten = 2) +
         facet_wrap(~ category, scales = "fixed", nrow=1) +
         theme_classic() +
         labs(title = paste0("ISG expression across ", g, " by major population")) + 
@@ -289,22 +291,37 @@ for(g in groups) {
          width = 12, height = 7,device = cairo_pdf)
 }
 
+# Do this within some major populations - celltype level
+mstict = msti %>%
+    group_by(predicted_labels, sanger_sample_id) %>% 
+    mutate(
+        median_ISG = median(!!sym(modulename))
+    ) %>% 
+    select(-c(!!modulename, cell)) %>% 
+    distinct() %>% 
+    arrange(category, -median_ISG)
 
-ggplot(mstisamp, aes(x = disease_status, y = median_ISG, fill=disease_status)) +
-  geom_violin(trim = FALSE, color = "black") +
-  facet_wrap(~ category, scales = "fixed", nrow=1) +
-  theme_classic() +
-  labs(title = "ISG expression across disease status by major population") + 
-  stat_compare_means(comparisons = comparisons, method = "wilcox.test") + 
-  theme(legend.position = "none")
+    
+int_population = c("Enterocyte", "Mesenchymal", "Myeloid")
+g="disease_inflam"
+print(paste0("..Plotting - ", g))
+vals = distinct(as.data.frame(mstict[,g]))[,1]
+comparisons = combn(as.character(vals), 2, simplify = FALSE)
 
+p = ggplot(filter(mstict, category %in% int_population), aes(x = .data[[g]], y = median_ISG, fill=.data[[g]])) +
+    geom_violin(trim = FALSE, color = "black") +
+    stat_summary(fun = median, geom = "crossbar", width = 0.3, color = "black", fatten = 2) +
+    facet_wrap(~ category, scales = "fixed", nrow=1) +
+    theme_classic() +
+    labs(title = paste0("ISG expression across ", g, " by major population")) + 
+    stat_compare_means(comparisons = comparisons, method = "wilcox.test", label = "p.signif", hide.ns = TRUE) + 
+    theme(
+        legend.position = "none", 
+        axis.text.x = element_text(angle=45, hjust=1)
+    )
 
-ggsave(paste0(out, "ISG_per_disease_status_per_category_persamp.pdf"),
-         width = 12, height = 4,device = cairo_pdf)
-
-
-
-
+ggsave(paste0(out, "ISG_per_", g, "_per_celltype_int_persamp.pdf"),
+        width = 12, height = 7,device = cairo_pdf)
 
 
 
