@@ -1,21 +1,18 @@
-# 
+# Bradley June 2025
+
+# Packages
 library(data.table)
 library(ggplot2)
 library(dplyr)
 library(ggpubr)
 library(tidyverse)
+
+# Options
+scale=F
 indir="results/"
-out="plotout/"
-scale=T
-if(scale){
-    indir = paste0(indir, "scaled-")
-    out = paste0(out, "scaled-")
-}
-allres=paste0(indir, "schogginsISG-module_scores.txt.gz")
-tires=paste0(indir, "schogginsISG-TI-module_scores.txt.gz")
-modulename="schogginsISG"
+modulename="schogginsISG_fixed"
+add_meta_file="input/eQTL_interactions.tsv" # Copied from what Tobi used here - /lustre/scratch127/humgen/projects_v2/sc-eqtl-ibd/analysis/tobi_qtl_analysis/data/interaction_files/2024_12_27-multi_tissue/eQTL_interactions.tsv
 umap.palette.df = read.csv("/lustre/scratch127/humgen/projects_v2/sc-eqtl-ibd/analysis/bradley_analysis/IBDverse/IBDVerse-sc-eQTL-code/data/palette.csv")
-umap.category.palette = deframe(dplyr::select(umap.palette.df, category, category_color))
 annot.mapping <- read_csv(paste0('/lustre/scratch127/humgen/projects_v2/sc-eqtl-ibd/analysis/bradley_analysis/IBDverse/IBDVerse-sc-eQTL-code/data/all_IBDverse_annotation_mastersheet.csv'), n_max = 103) %>% 
     dplyr::rename(label_machine = leiden,
                 label_new = JAMBOREE_ANNOTATION,
@@ -29,6 +26,17 @@ annot.mapping <- read_csv(paste0('/lustre/scratch127/humgen/projects_v2/sc-eqtl-
     )
 
 
+# Define other variables
+out=paste0("plotout/", modulename, "/")
+if(scale){
+    indir = paste0(indir, "scaled-")
+    out = paste0(out, "scaled-")
+}
+allres=paste0(indir, modulename, "-module_scores.txt.gz")
+tires=paste0(indir, modulename, "-TI-module_scores.txt.gz")
+umap.category.palette = deframe(dplyr::select(umap.palette.df, category, category_color))
+
+
 #######################
 # What is the overall expression of this signature like?
 #######################
@@ -40,6 +48,24 @@ ms = fread(allres) %>%
         disease_status = factor(disease_status, levels = c("Healthy", "CD"))
     ) %>% # Add the proper names
     left_join(select(annot.mapping, c('predicted_labels', 'label_new')))
+
+# Merge with other meta
+add_meta = read.delim(add_meta_file) %>% 
+    select(Genotyping_ID, ses_cd_binned, ses_inflamed) %>% 
+    mutate(
+        ses_cd_binned = case_when( # ses_cd_binned is the ses scored binned into 0-3, 4-6, 6-9.
+            ses_cd_binned == 0 ~ "mild",
+            ses_cd_binned == 1 ~ "moderate",
+            TRUE ~ "severe"
+        ), 
+        ses_inflamed = case_when( # ses_inflamed is a binary score of >=3 is 1 (inflamed), <3 is uninflamed
+            ses_inflamed == 1 ~ "inflamed",
+            TRUE ~ "uninflamed"
+        ) 
+    )
+
+ms = ms %>% 
+    left_join(add_meta, "Genotyping_ID")
 
 
 # Make sure outdir exists
@@ -224,6 +250,11 @@ mstisamp = fread(tires) %>%
         category = gsub("_ct", "", predicted_category),
         disease_status = factor(disease_status, levels = c("Healthy", "CD"))
     ) %>% 
+    left_join(add_meta, "Genotyping_ID") %>%  
+    mutate(
+        disease_inflam = paste0(disease_status, "-", ses_inflamed),
+        disease_inflam = factor(disease_inflam, levels=c("Healthy-uninflamed", "CD-uninflamed", "CD-inflamed"))
+    ) %>% 
     select(-predicted_labels) %>% 
     group_by(category, sanger_sample_id) %>% 
     mutate(
@@ -233,8 +264,31 @@ mstisamp = fread(tires) %>%
     distinct()
 
 
-vals = distinct(as.data.frame(mstisamp$disease_status))[,1]
-comparisons = combn(as.character(vals), 2, simplify = FALSE)
+groups = c("disease_status", "disease_inflam")
+for(g in groups) {
+    print(paste0("..Plotting - ", g))
+    vals = distinct(as.data.frame(mstisamp[,g]))[,1]
+    comparisons = combn(as.character(vals), 2, simplify = FALSE)
+
+    p = ggplot(mstisamp, aes(x = .data[[g]], y = median_ISG, fill=.data[[g]])) +
+        geom_violin(trim = FALSE, color = "black") +
+        stat_summary(fun = median, geom = "crossbar", width = 0.3, color = "black", fatten = 0) +
+        facet_wrap(~ category, scales = "fixed", nrow=1) +
+        theme_classic() +
+        labs(title = paste0("ISG expression across ", g, " by major population")) + 
+        stat_compare_means(comparisons = comparisons, method = "wilcox.test") + 
+        theme(legend.position = "none")
+
+    if(g == "disease_inflam"){
+        p = p + theme(axis.text.x = element_text(angle=45, hjust=1))
+    }
+
+    p
+
+    ggsave(paste0(out, "ISG_per_", g, "_per_category_persamp.pdf"),
+         width = 12, height = 7,device = cairo_pdf)
+}
+
 
 ggplot(mstisamp, aes(x = disease_status, y = median_ISG, fill=disease_status)) +
   geom_violin(trim = FALSE, color = "black") +
